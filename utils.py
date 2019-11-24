@@ -66,6 +66,3 @@ def read_dataset(data_dir):
         yield image, labels, img_id
 
 
-
-STANDFORD_BGROUND = read_dataset('./iccv09Data')
-image, label , id = next(STANDFORD_BGROUND)
