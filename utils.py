@@ -52,14 +52,15 @@ def read_dataset(data_dir):
 
     labels = [os.path.join(labels_dir, f) for f in os.listdir(labels_dir) if
               isfile(os.path.join(labels_dir, f)) and not f.startswith('.')]
-    labels = sorted(labels)
+    files = filter(lambda f: f.endswith('regions.txt'), labels)
+    labels = sorted(files)
 
     images = [f for f in glob.glob(f'{images_dir}/*.jpg')]
     images = sorted(images)
     train_files = zip(labels, images)
     for label_f, image_f in train_files:
-        if os.path.basename(label_f).split('.')[0] != os.path.basename(image_f).split('.')[0]:
-            print ("UNEQUAL IMAGE NAMES!", label_f, image_f)
+        # if os.path.basename(label_f).split('.')[0] != os.path.basename(image_f).split('.')[0]:
+        #     # print ("UNEQUAL IMAGE NAMES!", label_f, image_f)
         img_id = os.path.basename(label_f).split('.')[0]
         image = image_to_np_array(image_f)
         labels = text_labels_to_np_array(label_f)
