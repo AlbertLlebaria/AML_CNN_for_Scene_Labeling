@@ -21,31 +21,6 @@ class RCNN:
         self.output_layer_1 = output_layer_1
         self.output_layer_2 = output_layer_2
 
-        # shapes = [
-        #     [3, 3, 3, 16],
-        #     [3, 3, 16, 16],
-        #     [3, 3, 16, 32],
-        #     [3, 3, 32, 32],
-        #     [3, 3, 32, 64],
-        #     [3, 3, 64, 64],
-        #     [3, 3, 64, 128],
-        #     [3, 3, 128, 128],
-        #     [3, 3, 128, 256],
-        #     [3, 3, 256, 256],
-        #     [3, 3, 256, 512],
-        #     [3, 3, 512, 512],
-        #     [8192, 3600],
-        #     [3600, 2400],
-        #     [2400, 1600],
-        #     [1600, 800],
-        #     [800, 64],
-        #     [64, num_classes],
-        # ]
-        # weights = []
-        # for i in range(len(shapes)):
-        #     weights.append(self.get_weight(shapes[i], 'weight{}'.format(i)))
-        # self.weights = weights
-
     def conv2d(self, inputs, filters, stride_size):
         out = tf.nn.conv2d(inputs, filters, strides=[
                            1, stride_size, stride_size, 1], padding=padding)
@@ -67,7 +42,10 @@ class RCNN:
         self.optimizer.apply_gradients(zip(grads, self.weights))
         print(tf.reduce_mean(current_loss))
 
-    def model(self, x):
+    # Implementation of the first architecture, rCNN. Composed  by two convolutions of 8x8, and a final of 1x1. With 2 poolings of 2x2 after 
+    # the first two convolutions
+
+    def model_rcnn1(self, x):
 
         self.input = tf.placeholder(dtype=tf.float32, shape=[
                                     None, None, None, 3 + self.num_classes])
@@ -82,17 +60,47 @@ class RCNN:
         b_conv2 = tf.Variable(tf.constant(0.1, shape=self.output_layer_2))
 
         w_conv3 = tf.Variable(tf.truncated_normal(
-            [1, 1, 3 + self.output_layer_2, self.num_classes], stddev=0.1))
+            [1, 1, self.output_layer_2, self.num_classes], stddev=0.1))
         b_conv3 = tf.Variable(tf.constant(0.1, shape=self.num_classes))
 
         current_input = self.input
         current_output = self.output
 
+        self.errors = []
+        self.logits = []
+
         for n_layer in range(self.num_layers):
             h_conv1 = self.conv2d(current_input, self.w_conv1, 1) + b_conv1
             h_pool1 = self.maxpool(h_conv1, 2, 2)
 
-        return []
+            tanh1 = tf.tan(h_pool1)
+
+            h_conv2 = self.conv2d(current_input, self.w_conv2, 1) + b_conv2
+            h_pool2 = self.maxpool(h_conv2, 2, 2)
+            tanh2 = tf.tanh(h_pool2)
+
+            logits = self.conv2d(tanh2, w_conv3, 1)
+            predictions = tf.nn.softmax(
+                logits,
+                axis=None,
+                name=None)
+            
+            cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(logits, current_output)
+            error_for_all_pixel = tf.reduce_mean(cross_entropy, reduction_indices=[0])
+            error_for_image = tf.reduce_mean(error_for_all_pixel)
+
+            self.logits.append(logits)
+            self.errors.append(error_for_image)
+            
+            
+            # extracts RGB channels from input image. Only keeps every other pixel, since convolution scales down the
+            #  output. The shape of this should have the same height and width and the logits.
+            rgb = tf.strided_slice(current_input, [0, 0, 0, 0], [0, 0, 0, 3], strides=[1, 2, 2, 1], end_mask=7)
+            current_input = tf.concat(concat_dim=3, values=[rgb, predictions])
+
+        self.loss = tf.add_n(self.errors)
+        self.train_step = self.optimizer.minimize(self.loss)
+
 
     def train(self, dataset, n_epochs):
         for e in range(n_epochs):
