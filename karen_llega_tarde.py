@@ -7,7 +7,7 @@ from sklearn.preprocessing import MinMaxScaler
 padding = "SAME"  # @param ['SAME', 'VALID' ]
 
 
-class RCNN(tf.Module):
+class RCNN:
     def __init__(self, num_classes, num_layers, learning_rate, dropout_rate, leaky_relu_alpha, output_layer_1, output_layer_2):
 
         self.num_classes = num_classes
@@ -20,20 +20,6 @@ class RCNN(tf.Module):
 
         self.output_layer_1 = output_layer_1
         self.output_layer_2 = output_layer_2
-
-        self.w_conv1 = tf.Variable(tf.random.truncated_normal(
-            [8, 8, 3 + self.num_classes, self.output_layer_1], stddev=0.1))
-        self.b_conv1 = tf.Variable(tf.constant(
-            0.1, shape=[self.output_layer_1]))
-
-        self.w_conv2 = tf.Variable(tf.random.truncated_normal(
-            [8, 8, self.output_layer_1, self.output_layer_2], stddev=0.1))
-        self.b_conv2 = tf.Variable(tf.constant(
-            0.1, shape=[self.output_layer_2]))
-
-        self.w_conv3 = tf.Variable(tf.random.truncated_normal(
-            [1, 1, self.output_layer_2, self.num_classes], stddev=0.1))
-        self.b_conv3 = tf.Variable(tf.constant(0.1, shape=[self.num_classes]))
 
     def conv2d(self, inputs, filters, stride_size):
         out = tf.nn.conv2d(inputs, filters, strides=[
@@ -58,46 +44,59 @@ class RCNN(tf.Module):
 
     # Implementation of the first architecture, rCNN. Composed  by two convolutions of 8x8, and a final of 1x1. With 2 poolings of 2x2 after
     # the first two convolutions
-    def __call__(self, inpt):
+    @tf.function
+    def model_rcnn1(self, inpt, out):
 
         self.input = tf.Variable(initial_value=inpt, dtype=tf.float32, shape=[
             None, None,  None, 3 + self.num_classes])
-        # self.output = tf.Variable(
-        #     out, dtype=tf.int32, shape=[None, None, None])
+        self.output = tf.Variable(out, dtype=tf.int32, shape=[None, None, None])
+
+        w_conv1 = tf.Variable(tf.random.truncated_normal(
+            [8, 8, 3 + self.num_classes, self.output_layer_1], stddev=0.1))
+        b_conv1 = tf.Variable(tf.constant(0.1, shape=[self.output_layer_1]))
+
+        w_conv2 = tf.Variable(tf.random.truncated_normal(
+            [8, 8, self.output_layer_1, self.output_layer_2], stddev=0.1))
+        b_conv2 = tf.Variable(tf.constant(0.1, shape=[self.output_layer_2]))
+
+        w_conv3 = tf.Variable(tf.random.truncated_normal(
+            [1, 1, self.output_layer_2, self.num_classes], stddev=0.1))
+        b_conv3 = tf.Variable(tf.constant(0.1, shape=[self.num_classes]))
 
         current_input = self.input
-        # current_output = self.output
+        current_output = self.output
 
-        self.predictions = []
+        self.errors = []
         self.logits = []
 
         for n_layer in range(self.num_layers):
-            # current_output = tf.strided_slice(current_output, [0, 0, 0], [
-            #                                   0, 0, 0], strides=[1, 4, 4], end_mask=7)
+            current_output = tf.strided_slice(current_output, [0, 0, 0], [
+                                              0, 0, 0], strides=[1, 4, 4], end_mask=7)
             # current_output = tf.strided_slice(current_output, [0, 0, 0], [0, 0, 0], strides=[1, 2, 2], end_mask=7)
 
-            h_conv1 = self.conv2d(current_input, self.w_conv1, 1) + self.b_conv1
+            h_conv1 = self.conv2d(current_input, w_conv1, 1) + b_conv1
             h_pool1 = self.maxpool(h_conv1, 2, 2)
 
             tanh1 = tf.tan(h_pool1)
 
-            h_conv2 = self.conv2d(tanh1, self.w_conv2, 1) + self.b_conv2
+            h_conv2 = self.conv2d(tanh1, w_conv2, 1) + b_conv2
             h_pool2 = self.maxpool(h_conv2, 2, 2)
             tanh2 = tf.tanh(h_pool2)
 
-            logits = self.conv2d(tanh2, self.w_conv3, 1) + self.b_conv3
+            logits = self.conv2d(tanh2, w_conv3, 1) + b_conv3
             predictions = tf.nn.softmax(
                 logits,
                 axis=None,
                 name=None)
 
-            # cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(
-            #     current_output, logits)
-            # error_for_all_pixel = tf.reduce_mean(cross_entropy)
-            # error_for_image = tf.reduce_mean(error_for_all_pixel)
+
+            cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(
+                current_output, logits)
+            error_for_all_pixel = tf.reduce_mean(cross_entropy)
+            error_for_image = tf.reduce_mean(error_for_all_pixel)
 
             self.logits.append(logits)
-            self.predictions.append(predictions)
+            self.errors.append(error_for_image)
 
             # extracts RGB channels from input image. Only keeps every other pixel, since convolution scales down the
             #  output. The shape of this should have the same height and width and the logits.
@@ -106,7 +105,13 @@ class RCNN(tf.Module):
 
             current_input = tf.concat(values=[rgb, predictions], axis=3)
 
-        # self.loss = tf.add_n(self.errors)
+        self.loss = tf.add_n(self.errors)
         # variables = tf.variables
-        # print(self.trainable_variables)
+        # print(variables)
+        self.train_step = self.optimizer.minimize(lambda: self.loss,a )
 
+    def train(self, dataset, n_epochs):
+        for e in range(n_epochs):
+            for features in list(dataset)[0:10]:
+                image, label = features['image'], features['label']
+                self.train_step(self.model, image, tf.one_hot(label, depth=3))
