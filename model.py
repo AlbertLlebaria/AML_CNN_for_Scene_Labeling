@@ -61,7 +61,7 @@ class RCNN(tf.Module):
     def __call__(self, inpt):
 
         self.input = tf.Variable(initial_value=inpt, dtype=tf.float32, shape=[
-            None, None,  None, 3 + self.num_classes])
+            None, None,  None, 3 + self.num_classes],trainable=False)
         # self.output = tf.Variable(
         #     out, dtype=tf.int32, shape=[None, None, None])
 

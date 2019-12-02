@@ -48,6 +48,7 @@ for n in range(num_epochs):
                 current_loss = loss(RCNN_model.predictions,
                                     RCNN_model.logits, [labels])
             gradients = tape.gradient(current_loss, RCNN_model.trainable_variables)
+            print()
             RCNN_model.optimizer.apply_gradients(
                 zip(gradients, RCNN_model.trainable_variables))
             count += 1
