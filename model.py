@@ -49,32 +49,19 @@ class RCNN(tf.Module):
     def get_weight(self, shape, name):
         return tf.Variable(self.initializer(shape), name=name, trainable=True, dtype=tf.float32)
 
-    # def train_step(self, model, inputs, outputs):
-    #     with tf.GradientTape() as tape:
-    #         current_loss = self.loss(model(inputs), outputs)
-    #     grads = tape.gradient(current_loss, self.weights)
-    #     self.optimizer.apply_gradients(zip(grads, self.weights))
-    #     print(tf.reduce_mean(current_loss))
-
     # Implementation of the first architecture, rCNN. Composed  by two convolutions of 8x8, and a final of 1x1. With 2 poolings of 2x2 after
     # the first two convolutions
     def __call__(self, inpt):
 
         self.input = tf.Variable(initial_value=inpt, dtype=tf.float32, shape=[
             None, None,  None, 3 + self.num_classes],trainable=False)
-        # self.output = tf.Variable(
-        #     out, dtype=tf.int32, shape=[None, None, None])
 
         current_input = self.input
-        # current_output = self.output
 
         self.predictions = []
         self.logits = []
 
         for n_layer in range(self.num_layers):
-            # current_output = tf.strided_slice(current_output, [0, 0, 0], [
-            #                                   0, 0, 0], strides=[1, 4, 4], end_mask=7)
-            # current_output = tf.strided_slice(current_output, [0, 0, 0], [0, 0, 0], strides=[1, 2, 2], end_mask=7)
 
             h_conv1 = self.conv2d(current_input, self.w_conv1, 1) + self.b_conv1
             h_pool1 = self.maxpool(h_conv1, 2, 2)
@@ -91,10 +78,6 @@ class RCNN(tf.Module):
                 axis=None,
                 name=None)
 
-            # cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(
-            #     current_output, logits)
-            # error_for_all_pixel = tf.reduce_mean(cross_entropy)
-            # error_for_image = tf.reduce_mean(error_for_all_pixel)
 
             self.logits.append(logits)
             self.predictions.append(predictions)
@@ -105,8 +88,4 @@ class RCNN(tf.Module):
                                    0, 0, 0, 3], strides=[1, 4, 4, 1], end_mask=7)
 
             current_input = tf.concat(values=[rgb, predictions], axis=3)
-
-        # self.loss = tf.add_n(self.errors)
-        # variables = tf.variables
-        # print(self.trainable_variables)
 
