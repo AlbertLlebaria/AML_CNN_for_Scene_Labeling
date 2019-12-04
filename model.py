@@ -38,7 +38,7 @@ class RCNN(tf.Module):
     def conv2d(self, inputs, filters, stride_size):
         out = tf.nn.conv2d(inputs, filters, strides=[
                            1, stride_size, stride_size, 1], padding=padding)
-        return tf.nn.leaky_relu(out, alpha=self.leaky_relu_alpha)
+        return out
 
     def maxpool(self, inputs, pool_size, stride_size):
         return tf.nn.max_pool2d(inputs, ksize=[1, pool_size, pool_size, 1], padding='SAME', strides=[1, stride_size, stride_size, 1])
@@ -86,6 +86,6 @@ class RCNN(tf.Module):
             #  output. The shape of this should have the same height and width and the logits.
             rgb = tf.strided_slice(current_input, [0, 0, 0, 0], [
                                    0, 0, 0, 3], strides=[1, 4, 4, 1], end_mask=7)
-
+            print(predictions.shape, logits.shape)
             current_input = tf.concat(values=[rgb, predictions], axis=3)
 
