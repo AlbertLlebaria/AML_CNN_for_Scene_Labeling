@@ -6,6 +6,7 @@ import tensorflow_datasets as tfds
 import plac
 import time
 import os
+import math 
 
 learning_rate = 0.001  # @param {type: "number"}
 leaky_relu_alpha = 0.2
@@ -15,12 +16,12 @@ convolution_output_1 = 25
 convolution_output_2 = 50
 
 
-def loss(predictions, logits, output):
+def loss(predictions, logits, output, stride_size):
     errors = []
     out = tf.Variable(output, dtype=tf.int32, shape=[None, None, None])
     for index, prediction in enumerate(predictions):
         out = tf.strided_slice(out, [0, 0, 0], [
-            0, 0, 0], strides=[1, 2, 2], end_mask=7)
+            0, 0, 0], strides=[1, stride_size, stride_size], end_mask=7)
 
         cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(
             out, logits[index])
@@ -37,7 +38,7 @@ def train_step(model, image, labels):
     with tf.GradientTape() as tape:
         model([input_image])
         current_loss = loss(model.predictions,
-                            model.logits, [labels])
+                            model.logits, [labels], 4 if model.model_v == 1 else 2)
     gradients = tape.gradient(
         current_loss, model.trainable_variables)
     model.optimizer.apply_gradients(
@@ -61,7 +62,7 @@ def train(model, ckpt, manager, dataset_dir, n_epoch):
                 print("loss {:1.2f}".format(current_loss.numpy()))
 
 
-def test_model(dataset_dir, model: model.RCNN, output_dir,category_colors):
+def test_model(dataset_dir, model: model.RCNN, output_dir, category_colors):
     """
 
     """
@@ -84,7 +85,8 @@ def test_model(dataset_dir, model: model.RCNN, output_dir,category_colors):
 
         # output size is different for each layer
         logits = logits1 if model.num_layers == 1 else logits2
-        stride = 4 if model.num_layers == 2 else 2
+        stride = 16 if model.model_v == 1 else 4
+        
         predicted_labels = np.argmax(logits, axis=3)
 
         true_labels = labels[::stride, ::stride]
@@ -116,6 +118,7 @@ def test_model(dataset_dir, model: model.RCNN, output_dir,category_colors):
 
 @plac.annotations(
     model_dir=("Model name where is stored or loaded.", "option", "m", str),
+    model_v=("Model name where is stored or loaded.", "option", "v", int),
     dataset_dir=(
         "Directory where the data set is stored and saved.", "option", "d", str),
     isTraining=("Flag to either train the model or test the model.",
@@ -123,9 +126,9 @@ def test_model(dataset_dir, model: model.RCNN, output_dir,category_colors):
     n_epoch=("Epoch number", "option", "e", int),
     out_dir=("Output directory for predictionsr", "option", "o", str),
 )
-def main(model_dir='./tf_ckpts', dataset_dir='dataset', isTraining=False, n_epoch=30, out_dir='predictions'):
+def main(model_dir='./tf_ckpts', model_v=1, dataset_dir='dataset', isTraining=False, n_epoch=30, out_dir='predictions'):
     RCNN_model = model.RCNN(output_classes, 2, learning_rate, dropout_rate,
-                            leaky_relu_alpha, convolution_output_1, convolution_output_2)
+                            leaky_relu_alpha, convolution_output_1, convolution_output_2, model_v)
 
     ckpt = tf.train.Checkpoint(step=tf.Variable(
         1), optimizer=RCNN_model.optimizer, net=RCNN_model)

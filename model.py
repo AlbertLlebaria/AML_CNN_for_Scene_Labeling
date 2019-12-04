@@ -8,12 +8,13 @@ padding = "SAME"  # @param ['SAME', 'VALID' ]
 
 
 class RCNN(tf.Module):
-    def __init__(self, num_classes, num_layers, learning_rate, dropout_rate, leaky_relu_alpha, output_layer_1, output_layer_2):
+    def __init__(self, num_classes, num_layers, learning_rate, dropout_rate, leaky_relu_alpha, output_layer_1, output_layer_2, model_v):
 
         self.num_classes = num_classes
         self.num_layers = num_layers
         self.dropout_rate = dropout_rate
         self.leaky_relu_alpha = leaky_relu_alpha
+        self.model_v = model_v
 
         self.initializer = tf.initializers.glorot_uniform()
         self.optimizer = tf.optimizers.Adam(learning_rate)
@@ -122,4 +123,7 @@ class RCNN(tf.Module):
     # Implementation of the first architecture, rCNN. Composed  by two convolutions of 8x8, and a final of 1x1. With 2 poolings of 2x2 after
     # the first two convolutions
     def __call__(self, inpt):
-        self.model_v2(inpt)
+        if(self.model_v == 1):
+            self.model_v1(inpt)
+        else:
+            self.model_v2(inpt)
