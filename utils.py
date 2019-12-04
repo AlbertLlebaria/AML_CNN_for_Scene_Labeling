@@ -181,7 +181,8 @@ def save_labels_array(labels, output_filename, colors):
     :param labels: A 2D array of labels
     :param output_filename: The filename of the image to output
     """
-    img = Image.fromarray(obj=labels, mode="P")
+    print(labels)
+    img = Image.fromarray(obj=labels[0], mode="P")
     # palette is a flattened array of r,g,b values, repreesnting the colors in the palette in order.
     palette = []
     for c in colors:

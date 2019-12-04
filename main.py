@@ -20,7 +20,7 @@ def loss(predictions, logits, output):
     out = tf.Variable(output, dtype=tf.int32, shape=[None, None, None])
     for index, prediction in enumerate(predictions):
         out = tf.strided_slice(out, [0, 0, 0], [
-            0, 0, 0], strides=[1, 4, 4], end_mask=7)
+            0, 0, 0], strides=[1, 2, 2], end_mask=7)
 
         cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(
             out, logits[index])
@@ -88,7 +88,7 @@ def test_model(dataset_dir, model: model.RCNN, output_dir,category_colors):
         predicted_labels = np.argmax(logits, axis=3)
 
         true_labels = labels[::stride, ::stride]
-        print(predicted_labels.shape, true_labels.shape)
+
         correct_labels = np.equal(predicted_labels, true_labels)
         accuracy = np.mean(correct_labels)
         total_accuracy += accuracy
