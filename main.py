@@ -27,8 +27,8 @@ def loss(predictions, logits, output, stride_size):
             out, logits[index])
         error_for_all_pixel = tf.reduce_mean(cross_entropy)
         error_for_image = tf.reduce_mean(error_for_all_pixel)
-        errors.append(error_for_image)
-    return errors[0]
+        errors.append(error_for_all_pixel)
+    return errors[1]
 
 
 def train_step(model, image, labels):
@@ -63,9 +63,6 @@ def train(model, ckpt, manager, dataset_dir, n_epoch):
 
 
 def test_model(dataset_dir, model: model.RCNN, output_dir, category_colors):
-    """
-
-    """
     total_accuracy = 0
     class_correct_counts = np.zeros(model.num_classes)
     class_total_counts = np.zeros(model.num_classes)

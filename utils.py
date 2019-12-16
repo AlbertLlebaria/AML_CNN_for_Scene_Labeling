@@ -5,6 +5,7 @@ import os
 from shutil import copyfile
 from os.path import isfile
 import glob
+import scipy.io 
 
 
 def image_to_np_array(img_filename, float_cols=True):
@@ -181,7 +182,6 @@ def save_labels_array(labels, output_filename, colors):
     :param labels: A 2D array of labels
     :param output_filename: The filename of the image to output
     """
-    print(labels)
     img = Image.fromarray(obj=labels[0], mode="P")
     # palette is a flattened array of r,g,b values, repreesnting the colors in the palette in order.
     palette = []
@@ -189,3 +189,4 @@ def save_labels_array(labels, output_filename, colors):
         palette.extend(c)
     img.putpalette(palette)
     img.save(output_filename)
+
