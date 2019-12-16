@@ -8,7 +8,6 @@ import time
 import os
 import math
 
-
 learning_rate = 0.001  # @param {type: "number"}
 leaky_relu_alpha = 0.2
 dropout_rate = 0.3
@@ -55,13 +54,22 @@ def train(model, ckpt, manager, dataset_dir, n_epoch):
         dataset = utils.read_dataset(dataset_dir)
         print(f"Epoch: {n}")
         for image, labels, image_id in dataset:
-            current_loss = train_step(model, image, labels)
-            ckpt.step.assign_add(1)
-            if int(ckpt.step) % 10 == 0:
-                save_path = manager.save()
-                print("Checkpoint stored at step {}: {}".format(
-                    int(ckpt.step), save_path))
-                print("loss {:1.2f}".format(current_loss.numpy()))
+            shifted_images = []
+            shifted_labels = []
+            stride = 2 ** model.num_layers
+            for dy in range(stride):
+                for dx in range(stride):
+                    shifted_images.append(image[dy:, dx:, :])
+                    shifted_labels.append(labels[dy:, dx:])
+            shifted_zip = zip(shifted_images, shifted_labels)
+            for i, l in shifted_zip:
+                current_loss = train_step(model, i, l)
+                ckpt.step.assign_add(1)
+                if int(ckpt.step) % 10 == 0:
+                    save_path = manager.save()
+                    print("Checkpoint stored at step {}: {}".format(
+                        int(ckpt.step), save_path))
+                    print("loss {:1.2f}".format(current_loss.numpy()))
 
 
 def test_model(dataset_dir, model: model.RCNN, output_dir, category_colors):
