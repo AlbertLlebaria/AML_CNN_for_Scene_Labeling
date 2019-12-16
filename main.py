@@ -27,7 +27,7 @@ def loss(predictions, logits, output, stride_size):
             out, logits[index])
         error_for_all_pixel = tf.reduce_mean(cross_entropy)
         error_for_image = tf.reduce_mean(error_for_all_pixel)
-        errors.append(error_for_all_pixel)
+        errors.append(error_for_image)
     return errors[1]
 
 
