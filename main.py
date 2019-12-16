@@ -6,12 +6,14 @@ import tensorflow_datasets as tfds
 import plac
 import time
 import os
-import math 
+import math
+
 
 learning_rate = 0.001  # @param {type: "number"}
 leaky_relu_alpha = 0.2
 dropout_rate = 0.3
 output_classes = 8
+output_classes = 34
 convolution_output_1 = 25
 convolution_output_2 = 50
 
@@ -86,7 +88,7 @@ def test_model(dataset_dir, model: model.RCNN, output_dir, category_colors):
         # output size is different for each layer
         logits = logits1 if model.num_layers == 1 else logits2
         stride = 16 if model.model_v == 1 else 4
-        
+
         predicted_labels = np.argmax(logits, axis=3)
 
         true_labels = labels[::stride, ::stride]

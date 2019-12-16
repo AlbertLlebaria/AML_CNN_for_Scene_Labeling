@@ -5,6 +5,18 @@ import os
 from shutil import copyfile
 from os.path import isfile
 import glob
+from scipy.io import loadmat
+from random import shuffle
+
+
+def matToTxtLabels(labels_dir):
+    for f in os.listdir(labels_dir):
+        print(f)
+        filename = f.split('.')[0]
+        print(filename)
+        x = loadmat(labels_dir + f)
+        label = x['S']
+        np.savetxt(labels_dir + filename + '.regions.txt', label, delimiter=' ', fmt="%d")
 
 
 def image_to_np_array(img_filename, float_cols=True):
@@ -61,6 +73,7 @@ def read_dataset(data_dir):
 
     labels = [os.path.join(labels_dir, f) for f in os.listdir(labels_dir) if
               isfile(os.path.join(labels_dir, f)) and not f.startswith('.')]
+
     files = filter(lambda f: f.endswith('regions.txt'), labels)
     labels = sorted(files)
 
@@ -72,6 +85,38 @@ def read_dataset(data_dir):
         image = image_to_np_array(image_f)
         labels = text_labels_to_np_array(label_f)
         yield image, labels, img_id
+
+
+def split_sift_dataset(data_dir, out_dir):
+    labels_dir = os.path.join(data_dir, 'labels')
+    images_dir = os.path.join(data_dir, 'images')
+    print(labels_dir, images_dir)
+
+    images = [f for f in glob.glob(f'{images_dir}/*.jpg')]
+    images_names = [f.split('/')[2].split('.')[0] for f in glob.glob(f'{images_dir}/*.jpg')]
+    labels = [labels_dir + '/' + im + '.mat' for im in images_names]
+
+    train_files = zip(labels, images)
+
+    train_images_len = int(len(images)*0.8)
+    count = 0
+    for label_f, image_f in train_files:
+        if os.path.basename(label_f).split('.')[0] != os.path.basename(image_f).split('.')[0]:
+            print("UNEQUAL IMAGE NAMES!", label_f, image_f)
+        img_id = image_f.split('/')[1::]
+        img_id = '/'.join(img_id)
+        label_id = label_f.split('/')[1::]
+        label_id = '/'.join(label_id)
+
+        if count < train_images_len:
+            print(count)
+            copyfile(image_f, f"./{out_dir}/train/{img_id}")
+            copyfile(label_f, f"./{out_dir}/train/{label_id}")
+            count += 1
+        else:
+            copyfile(image_f, f"./{out_dir}/test/{img_id}")
+            copyfile(label_f, f"./{out_dir}/test/{label_id}")
+            count += 1
 
 
 def split_dataset(data_dir, train_percentage, out_dir):
