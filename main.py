@@ -79,11 +79,9 @@ def test_model(dataset_dir, model: model.RCNN, output_dir, category_colors):
         input_image = np.append(image, np.zeros(
             shape=[h, w, model.num_classes], dtype=np.float32), axis=2)
 
-        # run model on whole image at once
         model([input_image])
         logits1, logits2 = model.logits
 
-        # output size is different for each layer
         logits = logits1 if model.num_layers == 1 else logits2
         stride = 16 if model.model_v == 1 else 4
 
@@ -104,11 +102,11 @@ def test_model(dataset_dir, model: model.RCNN, output_dir, category_colors):
         print("Image #%d: %s: Accuracy: %f (time: %.1fs)" % (
             i, img_id, accuracy, time.time() - start_time))
 
-        # for layer_num in [1, 2]:
-        #     output_filename = os.path.join(
-        #         output_dir, img_id + '_test_%d.png' % layer_num)
-        #     utils.save_labels_array(predicted_labels.astype(
-        #         np.uint8), output_filename, colors=category_colors)
+        for layer_num in [1, 2]:
+            output_filename = os.path.join(
+                output_dir, img_id + '_test_%d.png' % layer_num)
+            utils.save_labels_array(predicted_labels.astype(
+                np.uint8), output_filename, colors=category_colors)
 
     print("%d Images, Total Accuracy: %f" % (i, total_accuracy / i))
     print("Per Class correct counts:", class_correct_counts)

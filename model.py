@@ -81,8 +81,6 @@ class RCNN(tf.Module):
             self.logits.append(logits)
             self.predictions.append(predictions)
 
-            # extracts RGB channels from input image. Only keeps every other pixel, since convolution scales down the
-            #  output. The shape of this should have the same height and width and the logits.
             rgb = tf.strided_slice(current_input, [0, 0, 0, 0], [
                                    0, 0, 0, 3], strides=[1, 4, 4, 1], end_mask=7)
             current_input = tf.concat(values=[rgb, predictions], axis=3)
@@ -114,14 +112,10 @@ class RCNN(tf.Module):
             self.logits.append(logits)
             self.predictions.append(predictions)
 
-            # extracts RGB channels from input image. Only keeps every other pixel, since convolution scales down the
-            #  output. The shape of this should have the same height and width and the logits.
             rgb = tf.strided_slice(current_input, [0, 0, 0, 0], [
                                    0, 0, 0, 3], strides=[1, 2, 2, 1], end_mask=7)
             current_input = tf.concat(values=[rgb, predictions], axis=3)
 
-    # Implementation of the first architecture, rCNN. Composed  by two convolutions of 8x8, and a final of 1x1. With 2 poolings of 2x2 after
-    # the first two convolutions
     def __call__(self, inpt):
         if(self.model_v == 1):
             self.model_v1(inpt)
