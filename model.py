@@ -4,8 +4,7 @@ import utils
 import tensorflow.keras.datasets as datasets
 from sklearn.preprocessing import MinMaxScaler
 
-padding = "SAME"  # @param ['SAME', 'VALID' ]
-
+padding = "SAME"
 
 class RCNN(tf.Module):
     def __init__(self, num_classes, num_layers, learning_rate, dropout_rate, leaky_relu_alpha, output_layer_1, output_layer_2, model_v):
@@ -73,10 +72,7 @@ class RCNN(tf.Module):
             tanh2 = tf.tanh(h_pool2)
 
             logits = self.conv2d(tanh2, self.w_conv3, 1) + self.b_conv3
-            predictions = tf.nn.softmax(
-                logits,
-                axis=None,
-                name=None)
+            predictions = tf.nn.softmax(logits, axis=None, name=None)
 
             self.logits.append(logits)
             self.predictions.append(predictions)
@@ -104,10 +100,7 @@ class RCNN(tf.Module):
             h_conv2 = self.conv2d(tanh1, self.w_conv2, 1) + self.b_conv2
 
             logits = self.conv2d(h_conv2, self.w_conv3, 1) + self.b_conv3
-            predictions = tf.nn.softmax(
-                logits,
-                axis=None,
-                name=None)
+            predictions = tf.nn.softmax(logits, axis=None, name=None)
 
             self.logits.append(logits)
             self.predictions.append(predictions)

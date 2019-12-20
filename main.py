@@ -8,10 +8,10 @@ import time
 import os
 import math
 
-learning_rate = 0.001  # @param {type: "number"}
+learning_rate = 0.001
 leaky_relu_alpha = 0.2
 dropout_rate = 0.3
-output_classes = 34
+output_classes = 34 #8 for stanford dataset
 convolution_output_1 = 25
 convolution_output_2 = 50
 
@@ -63,9 +63,6 @@ def train(model, ckpt, manager, dataset_dir, n_epoch):
 
 
 def test_model(dataset_dir, model: model.RCNN, output_dir, category_colors):
-    """
-
-    """
     total_accuracy = 0
     class_correct_counts = np.zeros(model.num_classes)
     class_total_counts = np.zeros(model.num_classes)
